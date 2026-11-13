@@ -1,0 +1,42 @@
+name: Robô Monitor B3
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  executar-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar codigo do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar ambiente Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar bibliotecas necessarias
+        run: |
+          pip install yfinance requests
+
+      - name: Executar script de monitoramento
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python monitor.py
+
+      - name: Auto-Renovacao para evitar inatividade de 60 dias
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull
+          date > keepalive.txt
+          git add keepalive.txt
+          git commit -m "Heartbeat automatico para manter o repositorio ativo" || exit 0
+          git push
