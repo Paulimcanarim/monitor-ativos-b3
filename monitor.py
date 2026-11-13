@@ -3,12 +3,23 @@ import requests
 import yfinance as yf
 from datetime import datetime
 
+# Credenciais do Telegram
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
+# Sua lista completa de ativos e limites configurados
 TARGETS = {
-    "ITSA4.SA": {"limite_inferior": 12.90},
-    "BBAS3.SA": {"limite_inferior": 15.00}
+    "KLBN4.SA": {"limite_inferior": 3.47, "limite_superior": 3.60},
+    "ITSA4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00},
+    "BBAS3.SA": {"limite_inferior": 14.00, "limite_superior": 15.00},
+    "CXSE3.SA": {"limite_inferior": 20.00, "limite_superior": 22.00},
+    "BBDC4.SA": {"limite_inferior": 14.00, "limite_superior": 15.00},
+    "CMIG4.SA": {"limite_inferior": 10.00, "limite_superior": 11.00},
+    "SAPR4.SA": {"limite_inferior": 5.90, "limite_superior": 6.50},
+    "POMO4.SA": {"limite_inferior": 3.50, "limite_superior": 4.00},
+    "BBSE3.SA": {"limite_inferior": 36.90, "limite_superior": 38.90},
+    "TAEE4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00},
+    "BTC-USD": {"limite_inferior": 70000.00, "limite_superior": 75000.00}
 }
 
 def send_push_alert(msg):
@@ -30,15 +41,22 @@ def check_prices():
             if dados.empty:
                 continue
             preco_atual = float(dados['Close'].iloc[-1])
-            alvo = config["limite_inferior"]
             
-            print(f"{ticker}: R$ {preco_atual:.2f} (Alvo: R$ {alvo:.2f})")
+            inf = config["limite_inferior"]
+            sup = config["limite_superior"]
             
-            if preco_atual <= alvo:
-                mensagem = f"🚨 **ALERTA DE OPORTUNIDADE!**\n\nO ativo **{ticker}** atingiu o seu preço alvo!\n📉 **Preço Atual:** R$ {preco_atual:.2f}\n🎯 **Seu Alvo:** R$ {alvo:.2f}"
+            print(f"{ticker}: R$ {preco_atual:.2f} (Inf: {inf} | Sup: {sup})")
+            
+            if preco_atual <= inf:
+                mensagem = f"🚨 **ALERTA DE QUEDA / OPORTUNIDADE!**\n\nO ativo **{ticker}** atingiu o limite inferior!\n📉 **Preço Atual:** R$ {preco_atual:.2f}\n🎯 **Seu Limite:** R$ {inf:.2f}"
                 send_push_alert(mensagem)
+            elif preco_atual >= sup:
+                mensagem = f"🚀 **ALERTA DE ALTA / ALVO ATINGIDO!**\n\nO ativo **{ticker}** atingiu o limite superior!\n📈 **Preço Atual:** R$ {preco_atual:.2f}\n🎯 **Seu Limite:** R$ {sup:.2f}"
+                send_push_alert(mensagem)
+                
         except Exception as e:
             print(f"Erro ao consultar {ticker}: {e}")
 
 if __name__ == "__main__":
     check_prices()
+   
