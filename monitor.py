@@ -19,7 +19,7 @@ TARGETS = {
     "POMO4.SA": {"limite_inferior": 3.50, "limite_superior": 4.00},
     "BBSE3.SA": {"limite_inferior": 36.90, "limite_superior": 38.90},
     "TAEE4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00},
-    "BTC-USD": {"limite_inferior": 70000.00, "limite_superior": 75000.00}
+    "BTC-USD": {"limite_inferior": 65000.00, "limite_superior": 75000.00}
 }
 
 def send_push_alert(msg):
