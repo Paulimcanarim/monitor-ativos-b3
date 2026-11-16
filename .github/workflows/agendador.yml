@@ -2,7 +2,7 @@ name: Robô B3 Ativo
 
 on:
   schedule:
-    - cron: "*/5 10-18 * * 1-5"
+    - cron: "*/5 13-21 * * 1-5"
   workflow_dispatch:
 
 permissions:
