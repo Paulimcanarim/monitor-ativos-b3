@@ -3,27 +3,28 @@ import requests
 import yfinance as yf
 from datetime import datetime
 
-# Credenciais do Telegram (nomes ajustados e padronizados com o GitHub Secrets)
+# Credenciais do Telegram
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Sua lista completa de ativos e limites configurados
+# Sua lista completa e oficial recuperada da sua foto
 TARGETS = {
-    "KLBN4.SA": {"limite_inferior": 3.47, "limite_superior": 5.00},
-    "ITSA4.SA": {"limite_inferior": 10.50, "limite_superior": 12.00},
-    "BBAS3.SA": {"limite_inferior": 24.00, "limite_superior": 34.00},
-    "CXSE3.SA": {"limite_inferior": 12.00, "limite_superior": 17.00},
-    "CMIG4.SA": {"limite_inferior": 10.00, "limite_superior": 15.00},
-    "SAPR4.SA": {"limite_inferior": 6.50, "limite_superior": 9.00},
+    "KLBN4.SA": {"limite_inferior": 3.47, "limite_superior": 3.60},
+    "ITSA4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00},
+    "BBAS3.SA": {"limite_inferior": 14.00, "limite_superior": 15.00},
+    "CXSE3.SA": {"limite_inferior": 20.00, "limite_superior": 22.00},
+    "BBDC4.SA": {"limite_inferior": 14.00, "limite_superior": 15.00},
+    "CMIG4.SA": {"limite_inferior": 10.00, "limite_superior": 11.00},
+    "SAPR4.SA": {"limite_inferior": 5.90, "limite_superior": 6.50},
     "POMO4.SA": {"limite_inferior": 3.50, "limite_superior": 4.00},
-    "BBSE3.SA": {"limite_inferior": 16.50, "limite_superior": 22.00},
-    "TAEE4.SA": {"limite_inferior": 12.50, "limite_superior": 16.00},
-    "BTC-USD": {"limite_inferior": 65000.00, "limite_superior": 95000.00}
+    "BBSE3.SA": {"limite_inferior": 36.90, "limite_superior": 38.90},
+    "TAEE4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00},
+    "BTC-USD": {"limite_inferior": 65000.00, "limite_superior": 75000.00}
 }
 
 def send_push_alert(msg):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Erro: Credenciais do Telegram não encontradas.")
+        print("Erro: Chaves do Telegram não encontradas.")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "Markdown"}
