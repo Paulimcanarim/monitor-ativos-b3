@@ -3,9 +3,9 @@ import requests
 import yfinance as yf
 from datetime import datetime
 
-# Credenciais do Telegram
+# Credenciais do Telegram (nomes ajustados e padronizados com o GitHub Secrets)
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-CHAT_ID = os.environ.get("CHAT_ID")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 # Sua lista completa de ativos e limites configurados
 TARGETS = {
@@ -22,11 +22,11 @@ TARGETS = {
 }
 
 def send_push_alert(msg):
-    if not TELEGRAM_TOKEN or not CHAT_ID:
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         print("Erro: Credenciais do Telegram não encontradas.")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "Markdown"}
     try:
         requests.post(url, json=payload, timeout=10)
     except Exception as e:
@@ -36,7 +36,6 @@ def check_prices():
     print(f"[{datetime.now()}] Iniciando verificação de preços...")
     for ticker, config in TARGETS.items():
         try:
-            # Corrigido para period='5d' para garantir que traz a cotação real atualizada
             dados = yf.Ticker(ticker).history(period="5d")
             if dados.empty:
                 continue
