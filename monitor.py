@@ -15,8 +15,8 @@ TARGETS = {
     "CXSE3.SA": {"limite_inferior": 12.00, "limite_superior": 17.00},
     "CMIG4.SA": {"limite_inferior": 10.00, "limite_superior": 15.00},
     "SAPR4.SA": {"limite_inferior": 6.50, "limite_superior": 9.00},
-    "MRVE3.SA": {"limite_inferior": 3.50, "limite_superior": 4.00},
-    "MYPK3.SA": {"limite_inferior": 16.50, "limite_superior": 22.00},
+    "POMO4.SA": {"limite_inferior": 3.50, "limite_superior": 4.00},
+    "BBSE3.SA": {"limite_inferior": 16.50, "limite_superior": 22.00},
     "TAEE4.SA": {"limite_inferior": 12.50, "limite_superior": 16.00},
     "BTC-USD": {"limite_inferior": 65000.00, "limite_superior": 95000.00}
 }
