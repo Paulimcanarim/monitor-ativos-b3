@@ -31,12 +31,13 @@ jobs:
         run: |
           python monitor.py
 
-      - name: Auto-renovação para evitar inatividade do dias
+      - name: Salvar histórico e manter repositório ativo
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull
           date >> keepalive.txt
-          git add keepalive.txt
-          git commit -m "Heartbeat automático para manter o repositório ativo" || exit 0
+          git add keepalive.txt ultimo_preco.json || git add keepalive.txt
+          git commit -m "Atualização automática de estado e heartbeat" || exit 0
           git push
+          
