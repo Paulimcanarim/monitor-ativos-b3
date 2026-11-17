@@ -1,29 +1,29 @@
 import os
 import json
 import requests
-import yfinance as yf
+import yfinance as f
 from datetime import datetime
 
-# Suas credenciais do Telegram configuradas diretamente
-TELEGRAM_TOKEN = "7724393275:AAHVy7G0vO4rQdY68rN8_Z3M2yK5x4w2v1Q"
-TELEGRAM_CHAT_ID = "6190886561"
+# Puxa o Token e o Chat ID de dentro do cofre seguro do GitHub
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
 # Arquivo para salvar o último preço que gerou alerta (evita o spam de 15 min)
-STATE_FILE = "ultimo_preco.json"
+STATE_FILE = 'ultimo_preco.json'
 
-# Sua lista completa e oficial com os seus limites reais e a trava de 1%
+# Sua lista completa e oficial com suas minhas reais e a faixa de 1%
 TARGETS = {
-    "KLBN4.SA": {"limite_inferior": 3.47, "limite_superior": 3.60, "variacao_min_pct": 1.0},
-    "ITSA4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00, "variacao_min_pct": 1.0},
+    "KLBN4.SA": {"limite_inferior": 3.47, "limite_superior": 3.50, "variacao_min_pct": 1.0},
+    "ITSA4.SA": {"limite_inferior": 12.50, "limite_superior": 13.00, "variacao_min_pct": 1.0},
     "BBAS3.SA": {"limite_inferior": 14.00, "limite_superior": 15.00, "variacao_min_pct": 1.0},
     "CXSE3.SA": {"limite_inferior": 20.00, "limite_superior": 22.00, "variacao_min_pct": 1.0},
-    "BBDC4.SA": {"limite_inferior": 14.00, "limite_superior": 15.00, "variacao_min_pct": 1.0},
-    "CMIG4.SA": {"limite_inferior": 10.00, "limite_superior": 11.00, "variacao_min_pct": 1.0},
-    "SAPR4.SA": {"limite_inferior": 5.90, "limite_superior": 6.50, "variacao_min_pct": 1.0},
-    "POMO4.SA": {"limite_inferior": 3.50, "limite_superior": 4.00, "variacao_min_pct": 1.0},
-    "BBSE3.SA": {"limite_inferior": 36.90, "limite_superior": 38.90, "variacao_min_pct": 1.0},
-    "TAEE4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00, "variacao_min_pct": 1.0},
-    "BTC-USD": {"limite_inferior": 65000.00, "limite_superior": 75000.00, "variacao_min_pct": 1.5}
+    "SNEL11.SA": {"limite_inferior": 10.00, "limite_superior": 11.00, "variacao_min_pct": 1.0},
+    "CMTS4.SA": {"limite_inferior": 14.00, "limite_superior": 15.00, "variacao_min_pct": 1.0},
+    "SAERP.SA": {"limite_inferior": 5.90, "limite_superior": 6.00, "variacao_min_pct": 1.0},
+    "FOHDA.SA": {"limite_inferior": 3.90, "limite_superior": 4.00, "variacao_min_pct": 1.0},
+    "BBSO3.SA": {"limite_inferior": 36.90, "limite_superior": 38.90, "variacao_min_pct": 1.0},
+    "VALE3.SA": {"limite_inferior": 12.90, "limite_superior": 13.90, "variacao_min_pct": 1.0},
+    "BTC-USD": {"limite_inferior": 65000.00, "limite_superior": 75000.00, "variacao_min_pct": 1.0}
 }
 
 def carregar_estado():
@@ -44,8 +44,9 @@ def salvar_estado(estado):
 
 def send_push_alert(msg):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Erro: Chaves do Telegram não encontradas.")
+        print("Erro: Chaves do Telegram nao encontradas.")
         return
+    
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "Markdown"}
     try:
@@ -54,85 +55,9 @@ def send_push_alert(msg):
         print(f"Erro ao enviar telegram: {e}")
 
 def check_prices():
-    print(f"[{datetime.now()}] Iniciando verificação inteligente de preços...")
+    print(f"[{datetime.now()}] Iniciando verificacao inteligente de precos...")
     estado_anterior = carregar_estado()
     estado_atualizado = estado_anterior.copy()
 
-    for ticker, config in TARGETS.items():
-        try:
-            dados = yf.Ticker(ticker).history(period="5d")
-            if dados.empty:
-                continue
-            preco_atual = float(dados['Close'].iloc[-1])
-
-            inf = config["limite_inferior"]
-            sup = config["limite_superior"]
-            variacao_min = config["variacao_min_pct"]
-
-            print(f"{ticker}: R$ {preco_atual:.2f} (Inf: {inf} Sup: {sup})")
-
-            # Verifica se atingiu os limites
-            if preco_atual <= inf or preco_atual >= sup:
-                tipo_limite = "inferior" if preco_atual <= inf else "superior"
-                limite_valor = inf if tipo_limite == "inferior" else sup
-                
-                chave_estado = f"{ticker}_{tipo_limite}"
-                ultimo_preco_alerta = estado_anterior.get(chave_estado)
-
-                deve_alertar = False
-                if ultimo_preco_alerta is None:
-                    deve_alertar = True
-                else:
-                    diferenca_pct = abs(preco_atual - ultimo_preco_alerta) / ultimo_preco_alerta * 100
-                    if diferenca_pct >= variacao_min:
-                        deve_alertar = True
-
-                if deve_alertar:
-                    if tipo_limite == "inferior":
-                        mensagem = f"🚨 **ALERTA DE QUEDA / OPORTUNIDADE!** O ativo `{ticker}` atingiu o limite inferior de R$ {limite_valor}! Preço atual: R$ {preco_atual:.2f}"
-                    else:
-                        mensagem = f"📈 **ALERTA DE ALTA / ALVO ATINGIDO!** O ativo `{ticker}` atingiu o limite superior de R$ {limite_valor}! Preço atual: R$ {preco_atual:.2f}"
-                    
-                    send_push_alert(mensagem)
-                    estado_atualizado[chave_estado] = preco_atual
-
-        except Exception as e:
-            print(f"Erro ao consultar {ticker}: {e}")
-
-    salvar_estado(estado_atualizado)
-
-def enviar_resumo_fechamento():
-    print(f"[{datetime.now()}] Gerando relatório de fechamento do dia...")
-    relatorio = "📊 **RESUMO DE FECHAMENTO DO DIA** 📊\n\n"
-    
-    for ticker, config in TARGETS.items():
-        try:
-            dados = yf.Ticker(ticker).history(period="2d")
-            if dados.empty:
-                continue
-            preco_fechamento = float(dados['Close'].iloc[-1])
-            
-            # Calcula a variação em relação ao fechamento do dia anterior (se disponível)
-            if len(dados) >= 2:
-                preco_anterior = float(dados['Close'].iloc[-2])
-                var_dia = ((preco_fechamento - preco_anterior) / preco_anterior) * 100
-                sinal = "+" if var_dia > 0 else ""
-                relatorio += f"• `{ticker}`: R$ {preco_fechamento:.2f} ({sinal}{var_dia:.2f}%)\n"
-            else:
-                relatorio += f"• `{ticker}`: R$ {preco_fechamento:.2f}\n"
-        except Exception as e:
-            print(f"Erro ao buscar fechamento de {ticker}: {e}")
-
-    send_push_alert(relatorio)
-
-if __name__ == "__main__":
-    # Pega a hora atual do sistema (GitHub Actions roda em UTC, então ajustamos ou chamamos as duas funções se for o horário)
-    # Por simplicidade, você pode rodar a verificação normal e, se quiser separar, 
-    # o cron do GitHub vai chamar no horário certo.
-    hora_atual_utc = datetime.utcnow().hour
-    # Se o GitHub disparar às 18:30 no Horário de Brasília (que dá 21:30 ou 20:30 UTC dependendo do horário de verão), 
-    # podemos simplificar rodando a verificação de preços e, caso seja fim de tarde, mandando o resumo também, 
-    # ou deixar um cron separado no yml.
-    
-    check_prices()
+    for ticker, config in TARGETS.
     
