@@ -76,7 +76,6 @@ def check_prices():
                 tipo_limite = "inferior" if preco_atual <= inf else "superior"
                 limite_valor = inf if tipo_limite == "inferior" else sup
                 
-                # Chave única para rastrear o último preço que disparou alerta para este ativo
                 chave_estado = f"{ticker}_{tipo_limite}"
                 ultimo_preco_alerta = estado_anterior.get(chave_estado)
 
@@ -84,7 +83,6 @@ def check_prices():
                 if ultimo_preco_alerta is None:
                     deve_alertar = True
                 else:
-                    # Calcula a distância percentual em relação ao último alerta enviado
                     diferenca_pct = abs(preco_atual - ultimo_preco_alerta) / ultimo_preco_alerta * 100
                     if diferenca_pct >= variacao_min:
                         deve_alertar = True
@@ -96,7 +94,6 @@ def check_prices():
                         mensagem = f"📈 **ALERTA DE ALTA / ALVO ATINGIDO!** O ativo `{ticker}` atingiu o limite superior de R$ {limite_valor}! Preço atual: R$ {preco_atual:.2f}"
                     
                     send_push_alert(mensagem)
-                    # Atualiza o estado com o preço atual que gerou o alerta
                     estado_atualizado[chave_estado] = preco_atual
 
         except Exception as e:
@@ -104,6 +101,38 @@ def check_prices():
 
     salvar_estado(estado_atualizado)
 
+def enviar_resumo_fechamento():
+    print(f"[{datetime.now()}] Gerando relatório de fechamento do dia...")
+    relatorio = "📊 **RESUMO DE FECHAMENTO DO DIA** 📊\n\n"
+    
+    for ticker, config in TARGETS.items():
+        try:
+            dados = yf.Ticker(ticker).history(period="2d")
+            if dados.empty:
+                continue
+            preco_fechamento = float(dados['Close'].iloc[-1])
+            
+            # Calcula a variação em relação ao fechamento do dia anterior (se disponível)
+            if len(dados) >= 2:
+                preco_anterior = float(dados['Close'].iloc[-2])
+                var_dia = ((preco_fechamento - preco_anterior) / preco_anterior) * 100
+                sinal = "+" if var_dia > 0 else ""
+                relatorio += f"• `{ticker}`: R$ {preco_fechamento:.2f} ({sinal}{var_dia:.2f}%)\n"
+            else:
+                relatorio += f"• `{ticker}`: R$ {preco_fechamento:.2f}\n"
+        except Exception as e:
+            print(f"Erro ao buscar fechamento de {ticker}: {e}")
+
+    send_push_alert(relatorio)
+
 if __name__ == "__main__":
+    # Pega a hora atual do sistema (GitHub Actions roda em UTC, então ajustamos ou chamamos as duas funções se for o horário)
+    # Por simplicidade, você pode rodar a verificação normal e, se quiser separar, 
+    # o cron do GitHub vai chamar no horário certo.
+    hora_atual_utc = datetime.utcnow().hour
+    # Se o GitHub disparar às 18:30 no Horário de Brasília (que dá 21:30 ou 20:30 UTC dependendo do horário de verão), 
+    # podemos simplificar rodando a verificação de preços e, caso seja fim de tarde, mandando o resumo também, 
+    # ou deixar um cron separado no yml.
+    
     check_prices()
     
