@@ -127,9 +127,11 @@ def enviar_resumo_fechamento():
 if __name__ == "__main__":
     agora_utc = datetime.now(timezone.utc)
     
-    if agora_utc.hour < 21 or (agora_utc.hour == 21 and agora_utc.minute < 25):
+    # Roda checagem de preços até as 18:50 de Brasília (21:50 UTC)
+    if agora_utc.hour < 21 or (agora_utc.hour == 21 and agora_utc.minute <= 50):
         check_prices()
         
-    if agora_utc.hour == 21 and 25 <= agora_utc.minute < 40:
+    # Roda o resumo de fechamento na janela das 19:00 de Brasília (22:00 a 22:14 UTC)
+    if agora_utc.hour == 22 and 0 <= agora_utc.minute < 15:
         enviar_resumo_fechamento()
-        
+    
