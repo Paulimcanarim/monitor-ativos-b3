@@ -2,7 +2,8 @@ import os
 import json
 import requests
 import yfinance as yf
-from datetime import datetime, timezone
+from datetime import datetime
+import pytz
 
 # Credenciais do Telegram (puxadas do cofre seguro do GitHub)
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
@@ -54,7 +55,8 @@ def send_push_alert(msg):
         print(f"Erro ao enviar telegram: {e}")
 
 def check_prices():
-    print(f"[{datetime.now(timezone.utc)}] Iniciando verificação inteligente de preços...")
+    fuso_br = pytz.timezone('America/Sao_Paulo')
+    print(f"[{datetime.now(fuso_br)}] Iniciando verificação inteligente de preços...")
     estado_anterior = carregar_estado()
     estado_atualizado = estado_anterior.copy()
 
@@ -101,7 +103,8 @@ def check_prices():
     salvar_estado(estado_atualizado)
 
 def enviar_resumo_fechamento():
-    print(f"[{datetime.now(timezone.utc)}] Gerando relatório de fechamento do dia...")
+    fuso_br = pytz.timezone('America/Sao_Paulo')
+    print(f"[{datetime.now(fuso_br)}] Gerando relatório de fechamento do dia...")
     relatorio = "📊 **RESUMO DE FECHAMENTO DO DIA (B3 & BTC)** 📊\n\n"
     
     for ticker in TARGETS.keys():
@@ -125,13 +128,14 @@ def enviar_resumo_fechamento():
     send_push_alert(relatorio)
 
 if __name__ == "__main__":
-    agora_utc = datetime.now(timezone.utc)
+    fuso_br = pytz.timezone('America/Sao_Paulo')
+    agora_br = datetime.now(fuso_br)
     
-    # Roda checagem de preços até as 18:50 de Brasília (21:50 UTC)
-    if agora_utc.hour < 21 or (agora_utc.hour == 21 and agora_utc.minute <= 50):
+    # Executa a verificação de preços das 10:00 às 18:59 (Horário de Brasília)
+    if agora_br.hour >= 10 and agora_br.hour < 19:
         check_prices()
         
-    # Roda o resumo de fechamento na janela das 19:00 de Brasília (22:00 a 22:14 UTC)
-    if agora_utc.hour == 22 and 0 <= agora_utc.minute < 15:
+    # Executa o resumo de fechamento exatamente às 19:00 (das 19:00 às 19:14, Horário de Brasília)
+    if agora_br.hour == 19 and 0 <= agora_br.minute < 15:
         enviar_resumo_fechamento()
-    
+            
