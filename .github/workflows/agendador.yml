@@ -2,7 +2,7 @@ name: Robô B3 Ativo
 
 on:
   schedule:
-    - cron: "*/15 13-21 * * 1-5"
+    - cron: "*/15 13-22 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -22,9 +22,12 @@ jobs:
 
       - name: Instalar bibliotecas necessárias
         run: |
-          pip install yfinance requests
+          pip install yfinance requests pytz
 
       - name: Executar script de monitoramento
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python monitor.py
 
@@ -37,4 +40,6 @@ jobs:
           git add keepalive.txt ultimo_preco.json || git add keepalive.txt
           git commit -m "Atualização automática de estado e heartbeat" || exit 0
           git push
+          
+
           
