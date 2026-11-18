@@ -9,10 +9,10 @@ import pytz
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
-# Arquivo para salvar o último preço que gerou alerta (evita o spam de 15 min)
+# Arquivo para salvar o estado dos alertas e controle diário
 STATE_FILE = "ultimo_preco.json"
 
-# Sua lista completa e oficial com os seus limites reais e a trava de 1%
+# Sua lista completa e oficial com os limites e a trava de variação
 TARGETS = {
     "KLBN4.SA": {"limite_inferior": 3.47, "limite_superior": 3.60, "variacao_min_pct": 1.0},
     "ITSA4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00, "variacao_min_pct": 1.0},
@@ -53,6 +53,23 @@ def send_push_alert(msg):
         requests.post(url, json=payload, timeout=10)
     except Exception as e:
         print(f"Erro ao enviar telegram: {e}")
+
+def enviar_resumo_abertura(agora_br):
+    print(f"[{agora_br}] Gerando boletim de abertura do pregão...")
+    relatorio = f"🌅 **BOLETIM DE ABERTURA ({agora_br.strftime('%d/%m %H:%M')})** 🌅\n\n"
+    
+    for ticker in TARGETS.keys():
+        try:
+            dados = yf.Ticker(ticker).history(period="5d")
+            if dados.empty:
+                continue
+            preco_atual = float(dados['Close'].iloc[-1])
+            moeda = "US$" if ticker == "BTC-USD" else "R$"
+            relatorio += f"• `{ticker.replace('.SA', '')}`: {moeda} {preco_atual:.2f}\n"
+        except Exception as e:
+            print(f"Erro ao buscar abertura de {ticker}: {e}")
+
+    send_push_alert(relatorio)
 
 def check_prices():
     fuso_br = pytz.timezone('America/Sao_Paulo')
@@ -130,12 +147,20 @@ def enviar_resumo_fechamento():
 if __name__ == "__main__":
     fuso_br = pytz.timezone('America/Sao_Paulo')
     agora_br = datetime.now(fuso_br)
+    hoje_str = agora_br.strftime('%Y-%m-%d')
     
-    # Executa a verificação de preços das 10:00 às 18:59 (Horário de Brasília)
+    # Horário de Brasília: Das 10:00 às 18:59
     if agora_br.hour >= 10 and agora_br.hour < 19:
+        estado = carregar_estado()
+        # Se ainda não mandou o boletim de abertura hoje, manda agora e salva a data
+        if estado.get("data_abertura") != hoje_str:
+            enviar_resumo_abertura(agora_br)
+            estado["data_abertura"] = hoje_str
+            salvar_estado(estado)
+            
         check_prices()
         
-    # Executa o resumo de fechamento exatamente às 19:00 (das 19:00 às 19:14, Horário de Brasília)
+    # Horário de Brasília: Exatamente às 19:00 (das 19:00 às 19:14) envia o resumo de fechamento
     if agora_br.hour == 19 and 0 <= agora_br.minute < 15:
         enviar_resumo_fechamento()
-            
+        
