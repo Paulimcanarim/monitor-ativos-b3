@@ -150,9 +150,8 @@ if __name__ == "__main__":
     hoje_str = agora_br.strftime('%Y-%m-%d')
     
     # Horário de Brasília: Das 10:00 às 18:59
-    if agora_br.hour >= 10 and agora_br.hour < 19:
+    if 10 <= agora_br.hour < 19:
         estado = carregar_estado()
-        # Se ainda não mandou o boletim de abertura hoje, manda agora e salva a data
         if estado.get("data_abertura") != hoje_str:
             enviar_resumo_abertura(agora_br)
             estado["data_abertura"] = hoje_str
@@ -160,7 +159,10 @@ if __name__ == "__main__":
             
         check_prices()
         
-    # Horário de Brasília: Exatamente às 19:00 (das 19:00 às 19:14) envia o resumo de fechamento
-    if agora_br.hour == 19 and 0 <= agora_br.minute < 15:
-        enviar_resumo_fechamento()
-        
+    # Horário de Brasília: Das 19:00 às 19:14 (com trava para não repetir no mesmo dia)
+    elif agora_br.hour == 19 and 0 <= agora_br.minute < 15:
+        estado = carregar_estado()
+        if estado.get("data_fechamento") != hoje_str:
+            enviar_resumo_fechamento()
+            estado["data_fechamento"] = hoje_str
+            salvar_estado(estado)
