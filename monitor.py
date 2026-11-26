@@ -13,7 +13,7 @@ TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 STATE_FILE = "ultimo_preco.json"
 
 TARGETS = {
-    "KLBN4.SA": {"limite_inferior": 3.47, "limite_superior": 3.60, "variacao_min_pct": 1.0},
+    "KLBN4.SA": {"limite_inferior": 3.40, "limite_superior": 3.60, "variacao_min_pct": 1.0},
     "ITSA4.SA": {"limite_inferior": 12.90, "limite_superior": 15.00, "variacao_min_pct": 1.0},
     "BBAS3.SA": {"limite_inferior": 14.00, "limite_superior": 15.00, "variacao_min_pct": 1.0},
     "CXSE3.SA": {"limite_inferior": 20.00, "limite_superior": 22.00, "variacao_min_pct": 1.0},
